@@ -68,6 +68,7 @@ import androidx.core.view.ViewCompat;
 import androidx.viewpager.widget.ViewPager;
 
 import com.termux.x11.extrakeys.ExtraKeysInfo;
+import com.termux.x11.input.GamepadBridge;
 import com.termux.x11.input.InputEventSender;
 import com.termux.x11.input.InputStub;
 import com.termux.x11.input.TouchInputHandler;
@@ -1004,7 +1005,25 @@ public class MainActivity extends AppCompatActivity {
         toggleExtraKeys(getTerminalToolbarViewPager().getVisibility() != View.VISIBLE, true);
     }
 
+    // Driveclub Android port: controller input goes to GamepadBridge (UDP to 127.0.0.1) instead of X11,
+    // where every controller button would arrive as the same unknown key.
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent e) {
+        if (GamepadBridge.onKey(e))
+            return true;
+        return super.dispatchKeyEvent(e);
+    }
+
+    @Override
+    public boolean dispatchGenericMotionEvent(MotionEvent e) {
+        if (GamepadBridge.onMotion(e))
+            return true;
+        return super.dispatchGenericMotionEvent(e);
+    }
+
     public boolean handleKey(KeyEvent e) {
+        if (GamepadBridge.onKey(e))
+            return true;
         if (filterOutWinKey && (e.getKeyCode() == KEYCODE_META_LEFT || e.getKeyCode() == KEYCODE_META_RIGHT || e.isMetaPressed()))
             return false;
         return mLorieKeyListener.onKey(getLorieView(), e.getKeyCode(), e);
